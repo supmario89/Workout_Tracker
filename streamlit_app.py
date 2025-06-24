@@ -230,7 +230,8 @@ elif page == "Edit Workouts":
         modified = False
         for i, ex in enumerate(exercises):
             col1, col2, col3, col4 = st.columns([6, 1, 1, 1])
-            col1.write(ex)
+            display_name = ex["name"] if isinstance(ex, dict) else ex
+            col1.write(display_name)
             if col2.button("↑", key=f"up_{i}") and i > 0:
                 exercises[i], exercises[i - 1] = exercises[i - 1], exercises[i]
                 modified = True
