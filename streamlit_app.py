@@ -8,6 +8,10 @@ import json
 import firebase_admin
 from firebase_admin import credentials, firestore
 
+user_id = st.sidebar.selectbox("Select user", ["Mario", "Nick"])
+if not user_id:
+    st.stop()
+
 if not firebase_admin._apps:
     cred = credentials.Certificate({
         "type": st.secrets["firebase"]["type"],
@@ -26,14 +30,14 @@ if not firebase_admin._apps:
 db = firestore.client()
 
 def load_workout_groups():
-    docs = db.collection("workout_groups").stream()
+    docs = db.collection("users").document(user_id).collection("workout_groups").stream()
     return {doc.id: doc.to_dict()["exercises"] for doc in docs}
 
 def save_workout_group(name, exercises):
-    db.collection("workout_groups").document(name).set({"exercises": exercises})
+    db.collection("users").document(user_id).collection("workout_groups").document(name).set({"exercises": exercises})
 
 def delete_workout_group(name):
-    db.collection("workout_groups").document(name).delete()
+    db.collection("users").document(user_id).collection("workout_groups").document(name).delete()
 
 workout_groups = load_workout_groups()
 
@@ -41,7 +45,7 @@ workout_days = list(workout_groups.keys())
 
 def update_csv(results, workout_day):
     for entry in results:
-        doc_ref = db.collection("workout_results").document()
+        doc_ref = db.collection("users").document(user_id).collection("workout_results").document()
         doc_ref.set({**entry, "workout_day": workout_day})
 
 workout_days = list(workout_groups.keys())
@@ -129,7 +133,7 @@ def Tracker_page():
     make_sidebar("Tracker")
     st.title("Progress Tracker")
 
-    docs = db.collection("workout_results").stream()
+    docs = db.collection("users").document(user_id).collection("workout_results").stream()
     all_data = [doc.to_dict() for doc in docs]
     if not all_data:
         st.info("No workout data found.")
