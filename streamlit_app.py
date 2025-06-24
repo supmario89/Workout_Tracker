@@ -7,8 +7,6 @@ import plotly.express as px
 import json
 import firebase_admin
 from firebase_admin import credentials, firestore
-from streamlit.runtime.scriptrunner.script_run_context import get_script_run_ctx
-from streamlit_extras.switch_page_button import switch_page
 
 user_id = st.sidebar.selectbox("Select user", ["Mario", "Joseph"])
 if not user_id:
@@ -98,9 +96,6 @@ def Home_page():
     
     visit = st.selectbox("Select Workout Day:", list(workout_days))
 
-    if st.button("Build Workout Day"):
-        st.switch_page("streamlit_app.py", "Builder")
-
     if visit:
         exercise_data = {}
         st.subheader(f"Exercises for {visit} day")
@@ -131,6 +126,9 @@ def Home_page():
                 results.append(entry)
             update_csv(results, visit)
             st.success("Workout saved!")
+    if st.button("Go to Builder"):
+        st.session_state["page"] = "Builder"
+        st.rerun()
 
             
 def Tracker_page():
@@ -191,7 +189,9 @@ def Builder_page():
         save_workout_group(new_day, exercises)
         st.success(f"Workout day '{new_day}' created with {len(exercises)} exercises.")
 
-page = st.sidebar.radio("Go to:", ["Home", "Tracker", "Builder", "Edit Workouts", "Manage Data"])
+if "page" not in st.session_state:
+    st.session_state["page"] = "Home"
+page = st.sidebar.radio("Go to:", ["Home", "Tracker", "Builder", "Edit Workouts", "Manage Data"], index=["Home", "Tracker", "Builder", "Edit Workouts", "Manage Data"].index(st.session_state["page"]))
 
 if page == "Home":
     Home_page()
