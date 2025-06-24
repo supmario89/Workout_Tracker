@@ -1,3 +1,26 @@
+def populate_sample_data():
+    import random
+    from datetime import timedelta
+
+    sample_exercises = ["Bench Press", "Incline Press", "Lat Pulldown", "Rows", "Pec Deck"]
+    base_date = datetime.date.today()
+
+    for i in range(5):
+        day_offset = timedelta(days=-i*2)
+        workout_date = (base_date + day_offset).isoformat()
+        for ex in sample_exercises:
+            entry = {
+                "date": workout_date,
+                "exercise": ex,
+                "weight": str(random.randint(100, 200)),
+                "reps1": str(random.randint(6, 10)),
+                "reps2": str(random.randint(6, 10)),
+                "reps3": str(random.randint(6, 10)),
+                "workout_day": "Push"
+            }
+            db.collection("users").document(user_id).collection("workout_results").add(entry)
+
+    st.success("Sample workout data added.")
 import datetime
 import csv
 import os
@@ -291,3 +314,6 @@ elif page == "Manage Data":
                     st.success("Workout session deleted.")
                     st.rerun()
     Manage_data_page()
+
+if user_id == "Mario":
+    populate_sample_data()
