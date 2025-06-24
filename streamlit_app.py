@@ -276,10 +276,11 @@ elif page == "Manage Data":
         for row in df.itertuples():
             with st.expander(f"{row.date.date()} - {row.workout_day} - {row.exercise}"):
                 st.write(f"Weight: {row.weight}")
-                rep_cols = [col for col in df.columns if col.startswith("reps")]
+                rep_cols = sorted([col for col in df.columns if col.startswith("reps")], key=lambda x: int(x[4:]))
                 for col in rep_cols:
-                    if getattr(row, col, None):
-                        st.write(f"{col.capitalize()}: {getattr(row, col)}")
+                    val = getattr(row, col, None)
+                    if val:
+                        st.write(f"{col.capitalize()}: {val}")
                 if st.button("Delete Entry", key=row.id):
                     db.collection("users").document(user_id).collection("workout_results").document(row.id).delete()
                     st.success("Workout session deleted.")
