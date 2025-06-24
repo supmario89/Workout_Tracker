@@ -96,6 +96,10 @@ def Home_page():
     
     visit = st.selectbox("Select Workout Day:", list(workout_days))
 
+    if st.button("Go to Builder"):
+        st.session_state["page"] = "Builder"
+        st.rerun()
+
     if visit:
         exercise_data = {}
         st.subheader(f"Exercises for {visit} day")
@@ -126,10 +130,6 @@ def Home_page():
                 results.append(entry)
             update_csv(results, visit)
             st.success("Workout saved!")
-    if st.button("Go to Builder"):
-        st.session_state["page"] = "Builder"
-        st.rerun()
-
             
 def Tracker_page():
     make_sidebar("Tracker")
