@@ -315,5 +315,5 @@ elif page == "Manage Data":
                     st.rerun()
     Manage_data_page()
 
-if user_id == "Mario":
-    populate_sample_data()
+# if user_id == "Mario":
+#     populate_sample_data()
