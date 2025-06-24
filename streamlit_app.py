@@ -7,6 +7,8 @@ import plotly.express as px
 import json
 import firebase_admin
 from firebase_admin import credentials, firestore
+from streamlit.runtime.scriptrunner.script_run_context import get_script_run_ctx
+from streamlit_extras.switch_page_button import switch_page
 
 user_id = st.sidebar.selectbox("Select user", ["Mario", "Joseph"])
 if not user_id:
@@ -95,6 +97,9 @@ st.markdown("""
 def Home_page():
     
     visit = st.selectbox("Select Workout Day:", list(workout_days))
+
+    if st.button("Build Workout Day"):
+        st.switch_page("streamlit_app.py", "Builder")
 
     if visit:
         exercise_data = {}
