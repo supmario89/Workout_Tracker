@@ -1,0 +1,18 @@
+[
+    {
+        "date": "2025-06-22",
+        "exercise": "Hammer Curls",
+        "weight": "120",
+        "reps1": "8",
+        "reps2": "8",
+        "reps3": "7"
+    },
+    {
+        "date": "2025-06-22",
+        "exercise": "Tricep Dumbells",
+        "weight": "140",
+        "reps1": "8",
+        "reps2": "8",
+        "reps3": "9"
+    }
+]

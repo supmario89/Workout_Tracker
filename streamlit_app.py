@@ -5,69 +5,44 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 import json
+import firebase_admin
+from firebase_admin import credentials, firestore
 
-WORKOUT_JSON_PATH = "workout_days.json"
-if os.path.exists(WORKOUT_JSON_PATH):
-    with open(WORKOUT_JSON_PATH, "r") as f:
-        workout_groups = json.load(f)
-else:
-    workout_groups = {
-        "Chest/Back": ["Bench", "Incline Bench"],
-        "Arms": ["Hammer Curls", "Tricep Dumbells"]
-    }
-    with open(WORKOUT_JSON_PATH, "w") as f:
-        json.dump(workout_groups, f, indent=2)
+if not firebase_admin._apps:
+    cred = credentials.Certificate({
+        "type": st.secrets["firebase"]["type"],
+        "project_id": st.secrets["firebase"]["project_id"],
+        "private_key_id": st.secrets["firebase"]["private_key_id"],
+        "private_key": st.secrets["firebase"]["private_key"].replace("\\n", "\n"),
+        "client_email": st.secrets["firebase"]["client_email"],
+        "client_id": st.secrets["firebase"]["client_id"],
+        "auth_uri": st.secrets["firebase"]["auth_uri"],
+        "token_uri": st.secrets["firebase"]["token_uri"],
+        "auth_provider_x509_cert_url": st.secrets["firebase"]["auth_provider_x509_cert_url"],
+        "client_x509_cert_url": st.secrets["firebase"]["client_x509_cert_url"],
+        "universe_domain": st.secrets["firebase"]["universe_domain"]
+    })
+    firebase_admin.initialize_app(cred)
+db = firestore.client()
+
+def load_workout_groups():
+    docs = db.collection("workout_groups").stream()
+    return {doc.id: doc.to_dict()["exercises"] for doc in docs}
+
+def save_workout_group(name, exercises):
+    db.collection("workout_groups").document(name).set({"exercises": exercises})
+
+def delete_workout_group(name):
+    db.collection("workout_groups").document(name).delete()
+
+workout_groups = load_workout_groups()
 
 workout_days = list(workout_groups.keys())
 
 def update_csv(results, workout_day):
-    file_name = f"{workout_day.lower().replace(' ', '_')}_workout.csv"
-
-    file_path = os.path.join("workout_csvs", file_name)
-
-    last_weight_by_exercise = {}
-    if os.path.exists(file_path):
-        with open(file_path, newline="") as f:
-            reader = csv.DictReader(f)
-            for row in reader:
-                exercise_name = row.get("Exercise")
-                weight_value = row.get("Weight", "")
-                if exercise_name:
-                    last_weight_by_exercise[exercise_name] = weight_value
-
     for entry in results:
-        prev_weight = last_weight_by_exercise.get(entry["exercise"])
-        try:
-            current_wt = float(entry["weight"])
-            prev_wt = float(prev_weight) if prev_weight not in ("", None) else None
-        except ValueError:
-            current_wt, prev_wt = None, None
-
-        if prev_wt is None:
-            entry["weight_change"] = "N/A"
-        else:
-            diff_wt = current_wt - prev_wt
-            entry["weight_change"] = "no change" if diff_wt == 0 else f"{diff_wt:+g} lbs"
-
-        try:
-            reps3_val = int(entry["reps3"])
-        except ValueError:
-            reps3_val = None
-
-        if reps3_val is None:
-            entry["reps3_change"] = "N/A"
-        else:
-            diff_rep = reps3_val - 8
-            entry["reps3_change"] = "no change" if diff_rep == 0 else f"{diff_rep:+d} reps"
-
-    if results:
-        headers = results[0].keys()
-    else:
-        headers = []
-
-    with open(file_path, "a", newline='') as file:
-        csv_writer = csv.DictWriter(file, fieldnames=headers)
-        csv_writer.writerows(results)
+        doc_ref = db.collection("workout_results").document()
+        doc_ref.set({**entry, "workout_day": workout_day})
 
 workout_days = list(workout_groups.keys())
 def make_sidebar(current_page):
@@ -154,44 +129,27 @@ def Tracker_page():
     make_sidebar("Tracker")
     st.title("Progress Tracker")
 
-    folder = "workout_csvs"
-    if not os.path.exists(folder):
-        st.info("No workout data folder found.")
+    docs = db.collection("workout_results").stream()
+    all_data = [doc.to_dict() for doc in docs]
+    if not all_data:
+        st.info("No workout data found.")
         return
-
-    for file_name in os.listdir(folder):
-        if not file_name.endswith("_workout.csv"):
+    df = pd.DataFrame(all_data)
+    df["date"] = pd.to_datetime(df["date"])
+    for workout_day in df["workout_day"].unique():
+        wdf = df[df["workout_day"] == workout_day]
+        if wdf.empty:
             continue
-
-        workout_day = file_name.replace("_workout.csv", "").replace("_", " ").title()
-        file_path = os.path.join(folder, file_name)
-
-        if not os.path.exists(file_path):
-            st.info(f"No data for {workout_day} yet.")
-            continue
-
-        df = pd.read_csv(file_path)
-        if df.empty or len(df.columns) <= 1:
-            continue
-        df.columns = [c.lower() for c in df.columns]
-        if "date" not in df.columns or "exercise" not in df.columns or "weight" not in df.columns:
-            st.warning(f"CSV for {workout_day} missing required columns.")
-            continue
-        df["date"] = pd.to_datetime(df["date"])
-        latest_dates = df["date"].drop_duplicates().sort_values(ascending=False).head(10).tolist()
-        filtered = df[df["date"].isin(latest_dates)]
-
-        prs = df.groupby("exercise")["weight"].max().to_dict()
-
+        st.subheader(f"{workout_day} Trends")
+        prs = wdf.groupby("exercise")["weight"].max().to_dict()
         with st.sidebar:
             st.markdown(f"### {workout_day} PRs")
             for exercise, weight in prs.items():
                 st.markdown(f"- 🏅 **{exercise}**: {weight} lbs")
-
-        st.subheader(f"{workout_day} Trends")
+        latest_dates = wdf["date"].drop_duplicates().sort_values(ascending=False).head(10).tolist()
+        filtered = wdf[wdf["date"].isin(latest_dates)]
         pivot_df = filtered.pivot_table(index="date", columns="exercise", values="weight", aggfunc="first").reset_index()
         melted = pivot_df.melt(id_vars=["date"], var_name="exercise", value_name="weight")
-
         fig = px.line(
             melted,
             x="date",
@@ -221,21 +179,7 @@ def Builder_page():
             st.error("You must enter at least one valid exercise.")
             return
 
-        workout_groups[new_day] = exercises
-
-        # Create a new CSV file with standard headers
-        file_name = new_day.lower().replace(" ", "_") + "_workout.csv"
-        file_path = os.path.join("workout_csvs", file_name)
-        if not os.path.exists("workout_csvs"):
-            os.makedirs("workout_csvs")
-        if not os.path.exists(file_path):
-            with open(file_path, "w", newline="") as f:
-                writer = csv.DictWriter(f, fieldnames=["date", "exercise", "weight", "reps1", "reps2", "reps3", "weight_change", "reps3_change"])
-                writer.writeheader()
-
-        with open(WORKOUT_JSON_PATH, "w") as f:
-            json.dump(workout_groups, f, indent=2)
-
+        save_workout_group(new_day, exercises)
         st.success(f"Workout day '{new_day}' created with {len(exercises)} exercises.")
 
 page = st.sidebar.radio("Go to:", ["Home", "Tracker", "Builder", "Edit Workouts"])
@@ -267,8 +211,7 @@ elif page == "Edit Workouts":
             if new_ex and new_ex not in st.session_state["edit_exercises"]:
                 st.session_state["edit_exercises"].append(new_ex)
                 workout_groups[selected_day] = st.session_state["edit_exercises"]
-                with open(WORKOUT_JSON_PATH, "w") as f:
-                    json.dump(workout_groups, f, indent=2)
+                save_workout_group(selected_day, workout_groups[selected_day])
                 st.success("Exercise added.")
 
         new_exercise = st.text_input("Add a new exercise", key="new_exercise_input")
@@ -298,14 +241,11 @@ elif page == "Edit Workouts":
         if modified:
             st.session_state["edit_exercises"] = exercises
             workout_groups[selected_day] = exercises
-            with open(WORKOUT_JSON_PATH, "w") as f:
-                json.dump(workout_groups, f, indent=2)
-            st.rerun()
+            save_workout_group(selected_day, exercises)
+            st.experimental_rerun()
 
         if st.button(f"Delete '{selected_day}' workout day", type="primary"):
-            del workout_groups[selected_day]
-            with open(WORKOUT_JSON_PATH, "w") as f:
-                json.dump(workout_groups, f, indent=2)
+            delete_workout_group(selected_day)
             csv_name = f"{selected_day.lower().replace(' ', '_')}_workout.csv"
             csv_path = os.path.join("workout_csvs", csv_name)
             if os.path.exists(csv_path):
