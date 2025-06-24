@@ -186,7 +186,7 @@ def Builder_page():
         save_workout_group(new_day, exercises)
         st.success(f"Workout day '{new_day}' created with {len(exercises)} exercises.")
 
-page = st.sidebar.radio("Go to:", ["Home", "Tracker", "Builder", "Edit Workouts"])
+page = st.sidebar.radio("Go to:", ["Home", "Tracker", "Builder", "Edit Workouts", "Manage Data"])
 
 if page == "Home":
     Home_page()
@@ -257,3 +257,31 @@ elif page == "Edit Workouts":
                 os.remove(csv_path)
             st.warning(f"'{selected_day}' workout and CSV deleted.")
     Edit_page()
+elif page == "Manage Data":
+    def Manage_data_page():
+        make_sidebar("Manage Data")
+        st.title("Manage Workout Data")
+
+        docs = db.collection("users").document(user_id).collection("workout_results").stream()
+        entries = [doc for doc in docs]
+        if not entries:
+            st.info("No workout data found.")
+            return
+
+        workout_logs = [{"id": doc.id, **doc.to_dict()} for doc in entries]
+        df = pd.DataFrame(workout_logs)
+        df["date"] = pd.to_datetime(df["date"])
+        df = df.sort_values("date", ascending=False)
+
+        for row in df.itertuples():
+            with st.expander(f"{row.date.date()} - {row.workout_day} - {row.exercise}"):
+                st.write(f"Weight: {row.weight}")
+                rep_cols = [col for col in df.columns if col.startswith("reps")]
+                for col in rep_cols:
+                    if getattr(row, col, None):
+                        st.write(f"{col.capitalize()}: {getattr(row, col)}")
+                if st.button("Delete Entry", key=row.id):
+                    db.collection("users").document(user_id).collection("workout_results").document(row.id).delete()
+                    st.success("Workout session deleted.")
+                    st.rerun()
+    Manage_data_page()
