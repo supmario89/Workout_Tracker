@@ -100,31 +100,30 @@ def Home_page():
         exercise_data = {}
         st.subheader(f"Exercises for {visit} day")
         for exercise in workout_groups.get(visit, []):
-            with st.expander(exercise):
-                weight = st.text_input("Weight", key=exercise)
-                reps1 = st.text_input("Reps1", key=f"Reps1{exercise}", placeholder=8)
-                reps2 = st.text_input("Reps2", key=f"Reps2{exercise}", placeholder=8)
-                reps3 = st.text_input("Reps3", key=f"Reps3{exercise}", placeholder=8)
-                # Store data in a dict
-                exercise_data[exercise] = {
+            ex_name = exercise["name"] if isinstance(exercise, dict) else exercise
+            num_sets = exercise.get("sets", 3) if isinstance(exercise, dict) else 3
+            with st.expander(ex_name):
+                weight = st.text_input("Weight", key=ex_name)
+                reps_inputs = []
+                for i in range(num_sets):
+                    reps_inputs.append(st.text_input(f"Reps{i+1}", key=f"Reps{i+1}_{ex_name}", placeholder="8"))
+                exercise_data[ex_name] = {
                     "weight": weight,
-                    "reps1": reps1,
-                    "reps2": reps2,
-                    "reps3": reps3
+                    "reps": [r if r else "8" for r in reps_inputs]
                 }
 
         if st.button("End Workout"):
             results = []
             today = datetime.date.today().isoformat()
             for exercise, data in exercise_data.items():
-                results.append({
+                entry = {
                     "date": today,
                     "exercise": exercise,
                     "weight": data["weight"],
-                    "reps1": data["reps1"] if data["reps1"] else "8",
-                    "reps2": data["reps2"] if data["reps2"] else "8",
-                    "reps3": data["reps3"] if data["reps3"] else "8"
-                })
+                }
+                for i, r in enumerate(data["reps"]):
+                    entry[f"reps{i+1}"] = r
+                results.append(entry)
             update_csv(results, visit)
             st.success("Workout saved!")
 
