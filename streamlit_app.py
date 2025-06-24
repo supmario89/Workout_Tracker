@@ -247,7 +247,7 @@ elif page == "Edit Workouts":
             st.session_state["edit_exercises"] = exercises
             workout_groups[selected_day] = exercises
             save_workout_group(selected_day, exercises)
-            st.experimental_rerun()
+            st.rerun()
 
         if st.button(f"Delete '{selected_day}' workout day", type="primary"):
             delete_workout_group(selected_day)
