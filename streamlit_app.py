@@ -8,7 +8,7 @@ import json
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-user_id = st.sidebar.selectbox("Select user", ["Mario", "Nick"])
+user_id = st.sidebar.selectbox("Select user", ["Mario", "Joseph"])
 if not user_id:
     st.stop()
 
@@ -113,7 +113,7 @@ def Home_page():
                     "reps3": reps3
                 }
 
-        if st.button("Save workout to CSV"):
+        if st.button("End Workout"):
             results = []
             today = datetime.date.today().isoformat()
             for exercise, data in exercise_data.items():
@@ -172,13 +172,14 @@ def Builder_page():
 
     new_day = st.text_input("Name your workout day (e.g., Legs, Push, Pull)")
     exercise_list = st.text_area("Enter exercises, one per line")
+    default_reps = st.number_input("Number of sets per exercise", min_value=1, max_value=10, value=3, help="Defaults to 3 sets if left unchanged")
 
     if st.button("Save Workout Day"):
         if not new_day or not exercise_list.strip():
             st.error("Please provide a workout name and at least one exercise.")
             return
 
-        exercises = [e.strip() for e in exercise_list.strip().split("\n") if e.strip()]
+        exercises = [{"name": e.strip(), "sets": default_reps} for e in exercise_list.strip().split("\n") if e.strip()]
         if not exercises:
             st.error("You must enter at least one valid exercise.")
             return
