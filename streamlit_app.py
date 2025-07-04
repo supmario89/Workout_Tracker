@@ -138,10 +138,26 @@ def Home_page():
                 pass
             num_sets = exercise.get("sets", 3) if isinstance(exercise, dict) else 3
             with st.expander(ex_name):
-                weight = st.text_input("Weight", key=ex_name, placeholder=max_weight)
+                weight_key = f"weight_{ex_name}"
+                # Use session_state for value, set it after input
+                weight = st.text_input(
+                    "Weight",
+                    key=weight_key,
+                    placeholder=max_weight,
+                    value=st.session_state.get(weight_key, "")
+                )
+                st.session_state[weight_key] = weight
                 reps_inputs = []
                 for i in range(num_sets):
-                    reps_inputs.append(st.text_input(f"Reps{i+1}", key=f"Reps{i+1}_{ex_name}", placeholder="8"))
+                    rep_key = f"Reps{i+1}_{ex_name}"
+                    rep_val = st.text_input(
+                        f"Reps{i+1}",
+                        key=rep_key,
+                        placeholder="8",
+                        value=st.session_state.get(rep_key, "")
+                    )
+                    st.session_state[rep_key] = rep_val
+                    reps_inputs.append(rep_val)
                 exercise_data[ex_name] = {
                     "weight": weight,
                     "reps": [r if r else "8" for r in reps_inputs]
@@ -160,6 +176,9 @@ def Home_page():
                     entry[f"reps{i+1}"] = r
                 results.append(entry)
             update_csv(results, visit)
+            for key in list(st.session_state.keys()):
+                if key.startswith("weight_") or key.startswith("Reps"):
+                    del st.session_state[key]
             st.success("Workout saved!")
             
 def Tracker_page():
