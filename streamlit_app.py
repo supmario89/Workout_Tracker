@@ -119,48 +119,6 @@ def Home_page():
     
     visit = st.selectbox("Select Workout Day:", list(workout_days))
 
-    # Stopwatch UI block
-    st.markdown("## ⏱️ Stopwatch")
-
-    if "stopwatch_running" not in st.session_state:
-        st.session_state.stopwatch_running = False
-        st.session_state.start_time = None
-        st.session_state.elapsed_time = 0.0
-        st.session_state.splits = []
-
-    col1, col2, col3, col4 = st.columns(4)
-    with col1:
-        if st.button("Start Stopwatch") and not st.session_state.stopwatch_running:
-            st.session_state.start_time = datetime.datetime.now()
-            st.session_state.stopwatch_running = True
-    with col2:
-        if st.button("Stop Stopwatch") and st.session_state.stopwatch_running:
-            elapsed = (datetime.datetime.now() - st.session_state.start_time).total_seconds()
-            st.session_state.elapsed_time += elapsed
-            st.session_state.stopwatch_running = False
-    with col3:
-        if st.button("Split Time") and st.session_state.stopwatch_running:
-            split_elapsed = (datetime.datetime.now() - st.session_state.start_time).total_seconds()
-            st.session_state.splits.append(st.session_state.elapsed_time + split_elapsed)
-    with col4:
-        if st.button("Reset Stopwatch"):
-            st.session_state.elapsed_time = 0.0
-            st.session_state.stopwatch_running = False
-            st.session_state.start_time = None
-            st.session_state.splits = []
-
-    total_elapsed = st.session_state.elapsed_time
-    if st.session_state.stopwatch_running and st.session_state.start_time:
-        total_elapsed += (datetime.datetime.now() - st.session_state.start_time).total_seconds()
-        # Only rerun if the stopwatch is running to enable live updating
-        st.rerun()
-
-    st.write(f"**Total Time:** {round(total_elapsed, 2)} seconds")
-
-    if st.session_state.splits:
-        st.markdown("### Split Times")
-        for i, s in enumerate(st.session_state.splits, start=1):
-            st.write(f"Split {i}: {round(s, 2)} seconds")
 
     if st.button("Go to Builder"):
         st.session_state["page"] = "Builder"
