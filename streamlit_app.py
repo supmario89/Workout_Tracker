@@ -128,28 +128,32 @@ def Home_page():
         st.session_state.elapsed_time = 0.0
         st.session_state.splits = []
 
-    if st.button("Start Stopwatch") and not st.session_state.stopwatch_running:
-        st.session_state.start_time = datetime.datetime.now()
-        st.session_state.stopwatch_running = True
-
-    if st.button("Stop Stopwatch") and st.session_state.stopwatch_running:
-        elapsed = (datetime.datetime.now() - st.session_state.start_time).total_seconds()
-        st.session_state.elapsed_time += elapsed
-        st.session_state.stopwatch_running = False
-
-    if st.button("Split Time") and st.session_state.stopwatch_running:
-        split_elapsed = (datetime.datetime.now() - st.session_state.start_time).total_seconds()
-        st.session_state.splits.append(st.session_state.elapsed_time + split_elapsed)
-
-    if st.button("Reset Stopwatch"):
-        st.session_state.elapsed_time = 0.0
-        st.session_state.stopwatch_running = False
-        st.session_state.start_time = None
-        st.session_state.splits = []
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        if st.button("Start Stopwatch") and not st.session_state.stopwatch_running:
+            st.session_state.start_time = datetime.datetime.now()
+            st.session_state.stopwatch_running = True
+    with col2:
+        if st.button("Stop Stopwatch") and st.session_state.stopwatch_running:
+            elapsed = (datetime.datetime.now() - st.session_state.start_time).total_seconds()
+            st.session_state.elapsed_time += elapsed
+            st.session_state.stopwatch_running = False
+    with col3:
+        if st.button("Split Time") and st.session_state.stopwatch_running:
+            split_elapsed = (datetime.datetime.now() - st.session_state.start_time).total_seconds()
+            st.session_state.splits.append(st.session_state.elapsed_time + split_elapsed)
+    with col4:
+        if st.button("Reset Stopwatch"):
+            st.session_state.elapsed_time = 0.0
+            st.session_state.stopwatch_running = False
+            st.session_state.start_time = None
+            st.session_state.splits = []
 
     total_elapsed = st.session_state.elapsed_time
     if st.session_state.stopwatch_running and st.session_state.start_time:
         total_elapsed += (datetime.datetime.now() - st.session_state.start_time).total_seconds()
+        # Only rerun if the stopwatch is running to enable live updating
+        st.experimental_rerun()
 
     st.write(f"**Total Time:** {round(total_elapsed, 2)} seconds")
 
