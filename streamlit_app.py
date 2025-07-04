@@ -31,9 +31,25 @@ import json
 import firebase_admin
 from firebase_admin import credentials, firestore
 
-user_id = st.sidebar.selectbox("Select user", ["Mario", "Joseph"])
-if not user_id:
+# --- User authentication block ---
+USER_CREDENTIALS = {
+    "Mario": "Mario",
+    "Joseph": "Joseph"
+}
+
+if "user_id" not in st.session_state:
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if st.button("Login"):
+        if username in USER_CREDENTIALS and USER_CREDENTIALS[username] == password:
+            st.session_state["user_id"] = username
+            st.rerun()
+        else:
+            st.error("Invalid username or password.")
     st.stop()
+
+user_id = st.session_state["user_id"]
 
 if not firebase_admin._apps:
     cred = credentials.Certificate({
