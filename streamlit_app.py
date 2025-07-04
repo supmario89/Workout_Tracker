@@ -139,14 +139,13 @@ def Home_page():
             num_sets = exercise.get("sets", 3) if isinstance(exercise, dict) else 3
             with st.expander(ex_name):
                 weight_key = f"weight_{ex_name}"
-                # Use session_state for value, set it after input
+                # Use session_state for value
                 weight = st.text_input(
                     "Weight",
                     key=weight_key,
                     placeholder=max_weight,
                     value=st.session_state.get(weight_key, "")
                 )
-                st.session_state[weight_key] = weight
                 reps_inputs = []
                 for i in range(num_sets):
                     rep_key = f"Reps{i+1}_{ex_name}"
@@ -156,7 +155,6 @@ def Home_page():
                         placeholder="8",
                         value=st.session_state.get(rep_key, "")
                     )
-                    st.session_state[rep_key] = rep_val
                     reps_inputs.append(rep_val)
                 exercise_data[ex_name] = {
                     "weight": weight,
