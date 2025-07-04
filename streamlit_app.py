@@ -153,9 +153,12 @@ def Home_page():
                         placeholder="8"
                     )
                     reps_inputs.append(rep_val)
+                note_key = f"note_{ex_name}"
+                note_val = st.text_area("Notes", key=note_key, placeholder="Add notes for this exercise...")
                 exercise_data[ex_name] = {
                     "weight": weight,
-                    "reps": [r if r else "8" for r in reps_inputs]
+                    "reps": [r if r else "8" for r in reps_inputs],
+                    "notes": note_val
                 }
 
         if st.button("End Workout"):
@@ -166,13 +169,14 @@ def Home_page():
                     "date": today,
                     "exercise": exercise,
                     "weight": data["weight"],
+                    "notes": data.get("notes", ""),
                 }
                 for i, r in enumerate(data["reps"]):
                     entry[f"reps{i+1}"] = r
                 results.append(entry)
             update_csv(results, visit)
             for key in list(st.session_state.keys()):
-                if key.startswith("weight_") or key.startswith("Reps"):
+                if key.startswith("weight_") or key.startswith("Reps") or key.startswith("note_"):
                     del st.session_state[key]
             st.success("Workout saved!")
             
@@ -331,6 +335,8 @@ elif page == "Manage Data":
                     val = getattr(row, col, None)
                     if val:
                         st.write(f"{col.capitalize()}: {val}")
+                if hasattr(row, "notes") and row.notes:
+                    st.markdown(f"**Notes:** {row.notes}")
                 if st.button("Delete Entry", key=row.id):
                     db.collection("users").document(user_id).collection("workout_results").document(row.id).delete()
                     st.success("Workout session deleted.")
