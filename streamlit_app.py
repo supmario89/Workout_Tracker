@@ -128,9 +128,17 @@ def Home_page():
         st.subheader(f"Exercises for {visit} day")
         for exercise in workout_groups.get(visit, []):
             ex_name = exercise["name"] if isinstance(exercise, dict) else exercise
+            docs = db.collection("users").document(user_id).collection("workout_results").where("exercise", "==", ex_name).stream()
+            max_weight = ""
+            try:
+                weights = [float(doc.to_dict().get("weight", 0)) for doc in docs if doc.to_dict().get("weight")]
+                if weights:
+                    max_weight = str(int(max(weights)))
+            except:
+                pass
             num_sets = exercise.get("sets", 3) if isinstance(exercise, dict) else 3
             with st.expander(ex_name):
-                weight = st.text_input("Weight", key=ex_name)
+                weight = st.text_input("Weight", key=ex_name, placeholder=max_weight)
                 reps_inputs = []
                 for i in range(num_sets):
                     reps_inputs.append(st.text_input(f"Reps{i+1}", key=f"Reps{i+1}_{ex_name}", placeholder="8"))
