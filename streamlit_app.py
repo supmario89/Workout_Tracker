@@ -153,7 +153,7 @@ def Home_page():
     if st.session_state.stopwatch_running and st.session_state.start_time:
         total_elapsed += (datetime.datetime.now() - st.session_state.start_time).total_seconds()
         # Only rerun if the stopwatch is running to enable live updating
-        st.experimental_rerun()
+        st.rerun()
 
     st.write(f"**Total Time:** {round(total_elapsed, 2)} seconds")
 
