@@ -32,7 +32,7 @@ import firebase_admin
 from firebase_admin import credentials, firestore
 
 # --- User selection block ---
-user_id = st.sidebar.selectbox("Select user", ["Mario", "Joseph"])
+user_id = st.sidebar.selectbox("Select user", ["Mario", "Joseph"], key="user_selectbox")
 
 if not firebase_admin._apps:
     cred = credentials.Certificate({
