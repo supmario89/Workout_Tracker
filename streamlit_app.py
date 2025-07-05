@@ -238,8 +238,6 @@ if "page" not in st.session_state:
     st.session_state["page"] = "Home"
 
 
-# Restore user selection dropdown in sidebar
-user_id = st.sidebar.selectbox("Select user", ["Mario", "Joseph"])
 
 page = st.sidebar.radio("Go to:", ["Home", "Tracker", "Builder", "Edit Workouts", "Manage Data"], index=["Home", "Tracker", "Builder", "Edit Workouts", "Manage Data"].index(st.session_state["page"]))
 
