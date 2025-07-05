@@ -31,28 +31,8 @@ import json
 import firebase_admin
 from firebase_admin import credentials, firestore
 
- # --- User authentication block ---
-USER_CREDENTIALS = {
-    "Mario": "Mario",
-    "Joseph": "Joseph"
-}
-
-if "user_id" not in st.session_state:
-    login_container = st.empty()
-    with login_container:
-        username = st.text_input("Username", key="login_username")
-        password = st.text_input("Password", type="password", key="login_password")
-        login_btn = st.button("Login", key="login_button")
-
-        if login_btn:
-            if username in USER_CREDENTIALS and USER_CREDENTIALS[username] == password:
-                st.session_state["user_id"] = username
-                st.rerun()
-            else:
-                st.error("Invalid username or password.")
-    st.stop()
-
-user_id = st.session_state["user_id"]
+# --- User selection block ---
+user_id = st.sidebar.selectbox("Select user", ["Mario", "Joseph"])
 
 if not firebase_admin._apps:
     cred = credentials.Certificate({
@@ -257,12 +237,9 @@ def Builder_page():
 if "page" not in st.session_state:
     st.session_state["page"] = "Home"
 
-# Sidebar: show logged-in user and log out button
-with st.sidebar:
-    st.markdown(f"**Logged in as:** {st.session_state['user_id']}")
-    if st.button("Log Out"):
-        st.session_state.clear()
-        st.rerun()
+
+# Restore user selection dropdown in sidebar
+user_id = st.sidebar.selectbox("Select user", ["Mario", "Joseph"])
 
 page = st.sidebar.radio("Go to:", ["Home", "Tracker", "Builder", "Edit Workouts", "Manage Data"], index=["Home", "Tracker", "Builder", "Edit Workouts", "Manage Data"].index(st.session_state["page"]))
 
