@@ -157,6 +157,11 @@ def Home_page():
             except:
                 pass
             num_sets = exercise.get("sets", 3) if isinstance(exercise, dict) else 3
+            # Load last note for this exercise before displaying text_area
+            last_note = ""
+            docs = db.collection("users").document(user_id).collection("workout_results").where("exercise", "==", ex_name).order_by("date", direction=firestore.Query.DESCENDING).limit(1).stream()
+            for doc in docs:
+                last_note = doc.to_dict().get("notes", "")
             with st.expander(ex_name):
                 weight_key = f"weight_{ex_name}"
                 weight = st.text_input(
@@ -173,9 +178,17 @@ def Home_page():
                         placeholder="8"
                     )
                     reps_inputs.append(rep_val)
+                note_key = f"note_{ex_name}"
+                note_val = st.text_area(
+                    "Notes",
+                    key=note_key,
+                    value=st.session_state.get(note_key, last_note),
+                    placeholder="Add notes for this exercise..."
+                )
                 exercise_data[ex_name] = {
                     "weight": weight,
-                    "reps": [r if r else "8" for r in reps_inputs]
+                    "reps": [r if r else "8" for r in reps_inputs],
+                    "notes": note_val
                 }
 
         if st.button("End Workout"):
@@ -186,13 +199,14 @@ def Home_page():
                     "date": today,
                     "exercise": exercise,
                     "weight": data["weight"],
+                    "notes": data.get("notes", ""),
                 }
                 for i, r in enumerate(data["reps"]):
                     entry[f"reps{i+1}"] = r
                 results.append(entry)
             update_csv(results, visit)
             for key in list(st.session_state.keys()):
-                if key.startswith("weight_") or key.startswith("Reps"):
+                if key.startswith("weight_") or key.startswith("Reps") or key.startswith("note_"):
                     del st.session_state[key]
             st.success("Workout saved!")
             
