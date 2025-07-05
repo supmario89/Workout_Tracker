@@ -40,13 +40,12 @@ USER_CREDENTIALS = {
 if "user_id" not in st.session_state:
     login_container = st.empty()
     with login_container:
-        username = st.text_input("Username", key="login_username")
-        password = st.text_input("Password", type="password", key="login_password")
-        login_btn = st.button("Login", key="login_button")
-
-        if login_btn:
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        if st.button("Login"):
             if username in USER_CREDENTIALS and USER_CREDENTIALS[username] == password:
                 st.session_state["user_id"] = username
+                login_container.empty()  # Clears login form
                 st.rerun()
             else:
                 st.error("Invalid username or password.")
